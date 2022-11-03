@@ -10,10 +10,8 @@ import (
 	"mail/internal/base"
 	"mail/internal/config"
 	"mail/pkg/logging"
-	"net/smtp"
 	"os"
 	"path"
-	"strconv"
 	"time"
 )
 
@@ -165,77 +163,4 @@ func sendBirthDayMail(cfg *config.Config, user base.Subscribers, first, second, 
 		return
 	}
 
-}
-
-func sendGoMail(cfg *config.Config, htmlModel string, recipient string, subject string, body string) {
-
-	var b bytes.Buffer
-	t, err := template.ParseFiles(htmlModel)
-	if err != nil {
-		log.Println("error parse html: ", err)
-		return
-	}
-	//t.Execute(&b, struct{ Name, Text string }{Name: "Здравствуй Азат!", Text: body})
-	t.Execute(&b, struct{ First_text, Second_text string }{First_text: "Здравствуй Азат!", Second_text: body})
-
-	msg := gomail.NewMessage()
-	msg.SetHeader("From", cfg.SenderEmail)
-	msg.SetHeader("To", recipient)
-	msg.SetHeader("Subject", subject)
-	msg.SetAddressHeader("To", cfg.RecipientEmail, "Получатель")
-	msg.SetBody("text/html", b.String())
-	//msg.Attach("badcode.jpg")
-
-	d := gomail.NewDialer(cfg.Host, cfg.Port, cfg.SenderEmail, cfg.SenderPass)
-
-	if err = d.DialAndSend(msg); err != nil {
-		log.Println("error send message: ", err)
-		return
-	}
-
-}
-
-func mailSendHtml(cfg *config.Config, htmlModel string, recipient []string, subject string, body string) {
-
-	var b bytes.Buffer
-	t, err := template.ParseFiles(htmlModel)
-	if err != nil {
-		log.Println("error parse html: ", err)
-		return
-	}
-	err = t.Execute(&b, struct{ Name, Text string }{Name: "Азат!", Text: body})
-	if err != nil {
-		return
-	}
-
-	address := cfg.Host + ":" + strconv.Itoa(cfg.Port)
-	auth := smtp.PlainAuth(cfg.RecipientEmail, cfg.SenderEmail, cfg.SenderPass, cfg.Host)
-	headers := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";"
-
-	//message := "Subject: " + subject + "\r\n" + body
-	message := "Subject: " + subject + "\r\n" + headers + "\n\n" + b.String()
-
-	err = smtp.SendMail(address, auth, cfg.RecipientEmail,
-		recipient, []byte(message))
-	if err != nil {
-		fmt.Println("error: ", err)
-		return
-	}
-}
-
-func mailSend(cfg *config.Config, recipient []string, subject string, body string) {
-
-	address := cfg.Host + ":" + strconv.Itoa(cfg.Port)
-	auth := smtp.PlainAuth(cfg.RecipientEmail, cfg.SenderEmail, cfg.SenderPass, cfg.Host)
-	headers := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";"
-
-	//message := "Subject: " + subject + "\r\n" + body
-	message := "Subject: " + subject + "\r\n" + headers + "\n\n" + body
-
-	err := smtp.SendMail(address, auth, cfg.RecipientEmail,
-		recipient, []byte(message))
-	if err != nil {
-		fmt.Println("error: ", err)
-		return
-	}
 }
